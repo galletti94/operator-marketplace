@@ -1,4 +1,4 @@
-package catalogsourceconfig
+package registry
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	marketplace "github.com/operator-framework/operator-marketplace/pkg/apis/operators/v1"
+	interface_client "github.com/operator-framework/operator-marketplace/pkg/client"
 	"github.com/operator-framework/operator-marketplace/pkg/datastore"
 	"github.com/sirupsen/logrus"
 	apps "k8s.io/api/apps/v1"
@@ -25,7 +26,25 @@ const (
 	portName        = "grpc"
 )
 
+// OpsrcOwnerNameLabel is the label used to mark ownership over resources
+// that are owned by the CatalogSourceConfig. When this label is set, the reconciler
+// should handle these resources when the CatalogSourceConfig is deleted.
+const CscOwnerNameLabel string = "csc-owner-name"
+
+// OpsrcOwnerNamespaceLabel is the label used to mark ownership over resources
+// that are owned by the CatalogSourceConfig. When this label is set, the reconciler
+// should handle these resources when the CatalogSourceConfig is deleted.
+const CscOwnerNamespaceLabel string = "csc-owner-namespace"
+
 var action = []string{"grpc_health_probe", "-addr=localhost:50051"}
+
+// DefaultRegistryServerImage is the registry image to be used in the absence of
+// the command line parameter.
+const DefaultRegistryServerImage = "quay.io/openshift/origin-operator-registry"
+
+// RegistryServerImage is the image used for creating the operator registry pod.
+// This gets set in the cmd/manager/main.go.
+var RegistryServerImage string
 
 type catalogSourceConfigWrapper struct {
 	*marketplace.CatalogSourceConfig
@@ -40,7 +59,7 @@ func (c *catalogSourceConfigWrapper) key() client.ObjectKey {
 
 type registry struct {
 	log     *logrus.Entry
-	client  client.Client
+	client  interface_client.Client
 	reader  datastore.Reader
 	csc     catalogSourceConfigWrapper
 	image   string
@@ -55,7 +74,7 @@ type Registry interface {
 }
 
 // NewRegistry returns an initialized instance of Registry
-func NewRegistry(log *logrus.Entry, client client.Client, reader datastore.Reader, csc *marketplace.CatalogSourceConfig, image string) Registry {
+func NewRegistry(log *logrus.Entry, client interface_client.Client, reader datastore.Reader, csc *marketplace.CatalogSourceConfig, image string) Registry {
 	return &registry{
 		log:    log,
 		client: client,

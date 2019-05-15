@@ -5,24 +5,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/operator-framework/operator-marketplace/pkg/operatorsource"
-
 	olm "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	marketplace "github.com/operator-framework/operator-marketplace/pkg/apis/operators/v1"
 	"github.com/operator-framework/operator-marketplace/pkg/datastore"
 	"github.com/operator-framework/operator-marketplace/pkg/phase"
+	"github.com/operator-framework/operator-marketplace/pkg/registry"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-// DefaultRegistryServerImage is the registry image to be used in the absence of
-// the command line parameter.
-const DefaultRegistryServerImage = "quay.io/openshift/origin-operator-registry"
-
-// RegistryServerImage is the image used for creating the operator registry pod.
-// This gets set in the cmd/manager/main.go.
-var RegistryServerImage string
 
 // NewConfiguringReconciler returns a Reconciler that reconciles a
 // CatalogSourceConfig object in the "Configuring" phase.
@@ -87,14 +78,14 @@ func (r *configuringReconciler) reconcileCatalogSource(csc *marketplace.CatalogS
 	}
 
 	// Ensure that a registry deployment is available
-	registry := NewRegistry(r.log, r.client, r.reader, csc, RegistryServerImage)
-	err = registry.Ensure()
+	existing_registry := registry.NewRegistry(r.log, r.client, r.reader, csc, registry.RegistryServerImage)
+	err = existing_registry.Ensure()
 	if err != nil {
 		return err
 	}
 
 	// Check if the CatalogSource already exists
-	catalogSourceGet := new(CatalogSourceBuilder).WithTypeMeta().CatalogSource()
+	catalogSourceGet := new(registry.CatalogSourceBuilder).WithTypeMeta().CatalogSource()
 	key := client.ObjectKey{
 		Name:      csc.Name,
 		Namespace: csc.Spec.TargetNamespace,
@@ -103,7 +94,7 @@ func (r *configuringReconciler) reconcileCatalogSource(csc *marketplace.CatalogS
 
 	// Update the CatalogSource if it exists else create one.
 	if err == nil {
-		catalogSourceGet.Spec.Address = registry.GetAddress()
+		catalogSourceGet.Spec.Address = existing_registry.GetAddress()
 		r.log.Infof("Updating CatalogSource %s", catalogSourceGet.Name)
 		err = r.client.Update(context.TODO(), catalogSourceGet)
 		if err != nil {
@@ -113,7 +104,7 @@ func (r *configuringReconciler) reconcileCatalogSource(csc *marketplace.CatalogS
 		r.log.Infof("Updated CatalogSource %s", catalogSourceGet.Name)
 	} else {
 		// Create the CatalogSource structure
-		catalogSource := newCatalogSource(csc, registry.GetAddress())
+		catalogSource := newCatalogSource(csc, existing_registry.GetAddress())
 		r.log.Infof("Creating CatalogSource %s", catalogSource.Name)
 		err = r.client.Create(context.TODO(), catalogSource)
 		if err != nil && !errors.IsAlreadyExists(err) {
@@ -169,7 +160,7 @@ func (r *configuringReconciler) checkPackages(csc *marketplace.CatalogSourceConf
 
 // newCatalogSource returns a CatalogSource object.
 func newCatalogSource(csc *marketplace.CatalogSourceConfig, address string) *olm.CatalogSource {
-	builder := new(CatalogSourceBuilder).
+	builder := new(registry.CatalogSourceBuilder).
 		WithOwnerLabel(csc).
 		WithMeta(csc.Name, csc.Spec.TargetNamespace).
 		WithSpec(olm.SourceTypeGrpc, address, csc.Spec.DisplayName, csc.Spec.Publisher)
@@ -181,7 +172,7 @@ func newCatalogSource(csc *marketplace.CatalogSourceConfig, address string) *olm
 	// "openshift-marketplace" label which will be used by the Marketplace UI
 	// to filter out global CatalogSources.
 	cscLabels := csc.ObjectMeta.GetLabels()
-	datastoreLabel, found := cscLabels[operatorsource.DatastoreLabel]
+	datastoreLabel, found := cscLabels[datastore.DatastoreLabel]
 	if found && strings.ToLower(datastoreLabel) == "true" {
 		builder.WithOLMLabels(cscLabels)
 	}

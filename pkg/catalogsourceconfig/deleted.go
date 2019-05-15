@@ -6,6 +6,7 @@ import (
 	olm "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	marketplace "github.com/operator-framework/operator-marketplace/pkg/apis/operators/v1"
 	"github.com/operator-framework/operator-marketplace/pkg/phase"
+	"github.com/operator-framework/operator-marketplace/pkg/registry"
 	log "github.com/sirupsen/logrus"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
@@ -85,8 +86,8 @@ func (r *deletedReconciler) Reconcile(ctx context.Context, in *marketplace.Catal
 func (r *deletedReconciler) deleteCreatedResources(ctx context.Context, name, namespace, targetNamespace string) error {
 	allErrors := []error{}
 	labelMap := map[string]string{
-		CscOwnerNameLabel:      name,
-		CscOwnerNamespaceLabel: namespace,
+		registry.CscOwnerNameLabel:      name,
+		registry.CscOwnerNamespaceLabel: namespace,
 	}
 	labelSelector := labels.SelectorFromSet(labelMap)
 	catalogSourceOptions := &client.ListOptions{LabelSelector: labelSelector}

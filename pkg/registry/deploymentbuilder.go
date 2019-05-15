@@ -1,4 +1,4 @@
-package catalogsourceconfig
+package registry
 
 import (
 	marketplace "github.com/operator-framework/operator-marketplace/pkg/apis/operators/v1"
