@@ -7,7 +7,6 @@ import (
 
 	olm "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"github.com/operator-framework/operator-marketplace/pkg/apis/operators/v1"
-	marketplace "github.com/operator-framework/operator-marketplace/pkg/apis/operators/v1"
 	interface_client "github.com/operator-framework/operator-marketplace/pkg/client"
 	"github.com/operator-framework/operator-marketplace/pkg/datastore"
 	"github.com/sirupsen/logrus"
@@ -75,26 +74,6 @@ func (r *RegistryDeployer) CreateRegistryResources(key types.NamespacedName, dis
 	}
 
 	return nil
-}
-
-// EnsurePackagesInStatus makes sure that the csc's status.PackageRepositioryVersions
-// field is updated at the end of the configuring phase if successful. It iterates
-// over the list of packages and creates a new map of PackageName:Version for each
-// package in the spec.
-func (r *RegistryDeployer) EnsurePackagesInStatus(csc *marketplace.CatalogSourceConfig) {
-	newPackageRepositioryVersions := make(map[string]string)
-	packageIDs := csc.GetPackageIDs()
-	for _, packageID := range packageIDs {
-		version, err := r.reader.ReadRepositoryVersion(packageID)
-		if err != nil {
-			r.log.Errorf("Failed to find package: %v", err)
-			version = "-1"
-		}
-
-		newPackageRepositioryVersions[packageID] = version
-	}
-
-	csc.Status.PackageRepositioryVersions = newPackageRepositioryVersions
 }
 
 // checkPackages returns an error if there are packages missing from the
