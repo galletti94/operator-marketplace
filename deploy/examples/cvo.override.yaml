@@ -3,10 +3,59 @@ kind: ClusterVersion
 metadata:
   name: version
 spec:
-  channel: fast
-  upstream: https://api.openshift.com/api/upgrades_info/v1/graph
+  # # channel: fast
+  # # clusterID: 11c3f49e-8704-4088-81fb-a71196405ec8
+  # upstream: https://api.openshift.com/api/upgrades_info/v1/graph
   overrides:
+    - kind: ClusterRole
+      name: marketplace-operator
+      unmanaged: true
+    - kind: ClusterRoleBinding
+      name: marketplace-operator
+      unmanaged: true
+    - kind: Role
+      name: marketplace-operator
+      namespace: openshift-marketplace
+      unmanaged: true
+    - kind:  RoleBinding
+      name: marketplace-operator
+      namespace: openshift-marketplace
+      unmanaged: true
     - kind: Deployment
       name: marketplace-operator
       namespace: openshift-marketplace
       unmanaged: true
+    - kind: OperatorSource
+      name: certified-operators
+      namespace: openshift-marketplace
+      unmanaged: true
+    - kind: OperatorSource
+      name: redhat-operators
+      namespace: openshift-marketplace
+      unmanaged: true
+    - kind: OperatorSource
+      name: community-operators
+      namespace: openshift-marketplace
+      unmanaged: true
+    - kind: CustomResourceDefinitions
+      name:  catalogsourceconfigs.marketplace.redhat.com
+      unmanaged: true
+    - kind: CustomResourceDefinitions
+      name:  operatorsources.marketplace.redhat.com
+      unmanaged: true
+    # - kind: Deployment
+    #   name: olm-operator
+    #   namespace: openshift-operator-lifecycle-manager
+    #   unmanaged: true
+    # - kind: Deployment
+    #   name: catalog-operator
+    #   namespace: openshift-operator-lifecycle-manager
+    #   unmanaged: true
+    # - kind: ConfigMap
+    #   name: olm-operators
+    #   namespace: openshift-operator-lifecycle-manager
+    #   unmanaged: true
+    # - kind: Subscription
+    #   name: packageserver
+    #   namespace: openshift-operator-lifecycle-manager
+    #   unmanaged: true

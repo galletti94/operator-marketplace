@@ -129,6 +129,13 @@ func (r *configuringReconciler) Reconcile(ctx context.Context, in *marketplace.O
 		return
 	}
 
+	// key := client.ObjectKey{
+	// 	Name:      "marketplace-operator",
+	// 	Namespace: in.Namespace,
+	// }
+
+	// // r.client.Get(context.TODO(), key, &apps.Deployment{})
+
 	if err == nil {
 		nextPhase = phase.GetNext(phase.Succeeded)
 		r.logger.Info("CatalogSourceConfig object has been created successfully")
