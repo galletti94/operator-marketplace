@@ -83,7 +83,7 @@ func childResourcesNotCreated(t *testing.T) {
 	require.NoError(t, err, "Could not get namespace")
 
 	// Check that the CatalogSourceConfig's child resources were not created.
-	err = helpers.CheckCscChildResourcesDeleted(test.Global.Client, cscName, namespace, namespace)
+	err = helpers.CheckChildResourcesDeleted(test.Global.Client, cscName, namespace, namespace)
 	assert.NoError(t, err, "Child resources of CatalogSourceConfig were unexpectedly created")
 }
 
@@ -108,7 +108,7 @@ func testOpSrcWithIdenticalPackages(t *testing.T) {
 	assert.NoError(t, err, "Could not create operator source")
 
 	// Check that the child resources were created.
-	err = helpers.CheckOpsrcChildResourcesCreated(client, opSrcName, namespace)
+	err = helpers.CheckChildResourcesCreated(client, opSrcName, namespace, namespace)
 	assert.NoError(t, err)
 
 	t.Run("resolved-multiple-sources", resolvedMultipleSources)
